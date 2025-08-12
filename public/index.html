@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Static Web Server - Trang Chủ</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖥️</text></svg>">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🚀 Static Web Server</h1>
+            <p class="subtitle">Express.js Server với Static Files & API Endpoints</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Chào mừng đến với Static Web Server</h2>
+       
+        </section>
+
+        <section class="server-info">
+            <h3>Thông Tin Server</h3>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h4>⏰ Thời Gian Server</h4>
+                    <p id="server-time">Đang tải...</p>
+                    <button id="refresh-time" class="btn btn-primary">Làm mới thời gian</button>
+                </div>
+                
+                <div class="info-card">
+                    <h4>🖥️ Thông Tin Hệ Thống</h4>
+                    <div id="system-info">Đang tải...</div>
+                    <button id="get-server-info" class="btn btn-secondary">Lấy thông tin server</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="api-section">
+            <h3>API Testing</h3>
+            <div class="api-controls">
+                <button id="test-api" class="btn btn-success">Test Server Info API</button>
+                <button id="test-post" class="btn btn-primary">Test POST API</button>
+                <button id="test-status" class="btn btn-warning">Test Status Codes</button>
+                <button id="test-headers" class="btn btn-info">Test Headers</button>
+                <button id="test-error" class="btn btn-danger">Test 404 Error</button>
+            </div>
+            <div id="api-response" class="response-container"></div>
+        </section>
+
+        <section class="stats">
+            <h3>📊 Thống Kê</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value" id="requests-count">0</span>
+                    <span class="stat-label">API Requests</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="page-views">1</span>
+                    <span class="stat-label">Page Views</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="uptime">-</span>
+                    <span class="stat-label">Server Uptime</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Nhóm 9.</p>
+            <p>Port: 3000 | Status: <span id="server-status" class="status-online">🟢 Online</span></p>
+        </div>
+    </footer>
+
+    <div id="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Đang tải...</p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
