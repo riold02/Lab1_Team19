@@ -111,7 +111,7 @@ socket.on('pong', data => {});                     // Pong response
 GET /api/server-info
 ```
 
-### **2. Socket Information** ✨ **NEW!**
+### **2. Socket Information** 
 ```http
 GET /api/socket-info
 ```
