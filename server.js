@@ -1,8 +1,17 @@
 const express = require('express');
 const path = require('path');
 const os = require('os');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
 const PORT = 3000;
 
 // Middleware to serve static files
@@ -224,10 +233,154 @@ app.use((err, req, res, next) => {
     });
 });
 
+// Socket.IO connection handling
+const connectedUsers = new Map();
+let messageHistory = [];
+
+io.on('connection', (socket) => {
+    console.log(`🔌 User connected: ${socket.id}`);
+    
+    // Send current user count and message history to new user
+    socket.emit('user-count', connectedUsers.size + 1);
+    socket.emit('message-history', messageHistory);
+    
+    // Handle user join
+    socket.on('user-join', (userData) => {
+        const user = {
+            id: socket.id,
+            name: userData.name || `User_${socket.id.substring(0, 6)}`,
+            joinTime: new Date().toISOString(),
+            ...userData
+        };
+        
+        connectedUsers.set(socket.id, user);
+        
+        // Notify all users about new user
+        socket.broadcast.emit('user-joined', {
+            user: user,
+            message: `${user.name} đã tham gia phòng chat`
+        });
+        
+        // Send updated user list to all clients
+        io.emit('user-list', Array.from(connectedUsers.values()));
+        io.emit('user-count', connectedUsers.size);
+        
+        console.log(`👤 User joined: ${user.name} (${socket.id})`);
+    });
+    
+    // Handle chat messages
+    socket.on('chat-message', (messageData) => {
+        const user = connectedUsers.get(socket.id);
+        if (!user) return;
+        
+        const message = {
+            id: Date.now() + Math.random(),
+            user: user.name,
+            userId: socket.id,
+            text: messageData.text,
+            timestamp: new Date().toISOString(),
+            type: messageData.type || 'text'
+        };
+        
+        // Store message in history (keep last 100 messages)
+        messageHistory.push(message);
+        if (messageHistory.length > 100) {
+            messageHistory.shift();
+        }
+        
+        // Broadcast message to all users
+        io.emit('new-message', message);
+        
+        console.log(`💬 Message from ${user.name}: ${message.text}`);
+    });
+    
+    // Handle typing indicators
+    socket.on('typing-start', () => {
+        const user = connectedUsers.get(socket.id);
+        if (user) {
+            socket.broadcast.emit('user-typing', {
+                userId: socket.id,
+                userName: user.name,
+                typing: true
+            });
+        }
+    });
+    
+    socket.on('typing-stop', () => {
+        socket.broadcast.emit('user-typing', {
+            userId: socket.id,
+            typing: false
+        });
+    });
+    
+    // Handle server status requests
+    socket.on('get-server-status', () => {
+        socket.emit('server-status', {
+            timestamp: new Date().toISOString(),
+            uptime: process.uptime(),
+            connectedUsers: connectedUsers.size,
+            totalMessages: messageHistory.length,
+            memory: process.memoryUsage(),
+            platform: os.platform(),
+            nodeVersion: process.version
+        });
+    });
+    
+    // Handle custom events for real-time features
+    socket.on('ping', (data) => {
+        socket.emit('pong', {
+            ...data,
+            serverTime: Date.now(),
+            latency: Date.now() - (data.clientTime || 0)
+        });
+    });
+    
+    // Handle disconnect
+    socket.on('disconnect', (reason) => {
+        const user = connectedUsers.get(socket.id);
+        
+        if (user) {
+            connectedUsers.delete(socket.id);
+            
+            // Notify other users
+            socket.broadcast.emit('user-left', {
+                user: user,
+                message: `${user.name} đã rời khỏi phòng chat`,
+                reason: reason
+            });
+            
+            // Send updated user list and count
+            io.emit('user-list', Array.from(connectedUsers.values()));
+            io.emit('user-count', connectedUsers.size);
+            
+            console.log(`👋 User disconnected: ${user.name} (${socket.id}) - Reason: ${reason}`);
+        }
+    });
+});
+
+// API endpoint to get socket information
+app.get('/api/socket-info', (req, res) => {
+    res.json({
+        success: true,
+        message: 'Socket.IO information',
+        data: {
+            connectedUsers: connectedUsers.size,
+            totalMessages: messageHistory.length,
+            users: Array.from(connectedUsers.values()).map(user => ({
+                id: user.id,
+                name: user.name,
+                joinTime: user.joinTime
+            })),
+            recentMessages: messageHistory.slice(-10) // Last 10 messages
+        }
+    });
+});
+
 // Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Static Web Server running on http://localhost:${PORT}`);
+server.listen(PORT, () => {
+    console.log(`🚀 Server with Socket.IO running on http://localhost:${PORT}`);
     console.log(`📁 Serving static files from: ${path.join(__dirname, 'public')}`);
+    console.log(`🔌 Socket.IO enabled for real-time communication`);
     console.log(`⏰ Server started at: ${new Date().toISOString()}`);
 });
 

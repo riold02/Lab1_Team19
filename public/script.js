@@ -2,6 +2,14 @@
 let requestCount = 0;
 let pageViews = parseInt(localStorage.getItem('pageViews') || '0') + 1;
 
+// Socket.IO variables
+let socket = null;
+let currentUser = null;
+let isInChat = false;
+let typingTimer = null;
+let connectedUsers = [];
+let messageHistory = [];
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Static Web Server Client initialized');
@@ -16,6 +24,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Set up event listeners
     setupEventListeners();
+    
+    // Initialize Socket.IO
+    initializeSocket();
     
     // Auto-refresh timestamp every 30 seconds
     setInterval(loadServerTime, 30000);
@@ -53,6 +64,9 @@ function setupEventListeners() {
     if (testHeadersBtn) {
         testHeadersBtn.addEventListener('click', testHeaders);
     }
+    
+    // Socket.IO event listeners
+    setupSocketEventListeners();
 }
 
 // AJAX utility function
@@ -421,3 +435,365 @@ window.debugAPI = {
 };
 
 console.log('🎯 Debug functions available at window.debugAPI');
+
+// ============ Socket.IO Implementation ============
+
+// Initialize Socket.IO connection
+function initializeSocket() {
+    if (typeof io === 'undefined') {
+        console.warn('Socket.IO library not loaded');
+        return;
+    }
+    
+    socket = io();
+    
+    socket.on('connect', () => {
+        console.log('🔌 Connected to Socket.IO server');
+        updateConnectionStatus(true);
+    });
+    
+    socket.on('disconnect', (reason) => {
+        console.log('🔌 Disconnected from Socket.IO server:', reason);
+        updateConnectionStatus(false);
+        isInChat = false;
+        currentUser = null;
+        updateChatUI();
+    });
+    
+    socket.on('user-count', (count) => {
+        updateUserCount(count);
+    });
+    
+    socket.on('user-list', (users) => {
+        connectedUsers = users;
+        updateUsersList();
+    });
+    
+    socket.on('message-history', (messages) => {
+        messageHistory = messages;
+        displayMessages();
+    });
+    
+    socket.on('new-message', (message) => {
+        addMessage(message);
+        scrollToBottom();
+    });
+    
+    socket.on('user-joined', (data) => {
+        addSystemMessage(data.message);
+    });
+    
+    socket.on('user-left', (data) => {
+        addSystemMessage(data.message);
+    });
+    
+    socket.on('user-typing', (data) => {
+        updateTypingIndicator(data);
+    });
+    
+    socket.on('server-status', (status) => {
+        console.log('📊 Server status:', status);
+        updateSocketStats(status);
+    });
+}
+
+// Setup Socket.IO event listeners
+function setupSocketEventListeners() {
+    const joinChatBtn = document.getElementById('join-chat');
+    const leaveChatBtn = document.getElementById('leave-chat');
+    const usernameInput = document.getElementById('username-input');
+    const messageInput = document.getElementById('message-input');
+    const sendMessageBtn = document.getElementById('send-message');
+    
+    if (joinChatBtn) {
+        joinChatBtn.addEventListener('click', joinChat);
+    }
+    
+    if (leaveChatBtn) {
+        leaveChatBtn.addEventListener('click', leaveChat);
+    }
+    
+    if (usernameInput) {
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                joinChat();
+            }
+        });
+    }
+    
+    if (messageInput) {
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        messageInput.addEventListener('input', handleTyping);
+    }
+    
+    if (sendMessageBtn) {
+        sendMessageBtn.addEventListener('click', sendMessage);
+    }
+}
+
+// Join chat functionality
+function joinChat() {
+    const usernameInput = document.getElementById('username-input');
+    const username = usernameInput.value.trim();
+    
+    if (!username) {
+        alert('Vui lòng nhập tên của bạn');
+        usernameInput.focus();
+        return;
+    }
+    
+    if (!socket || !socket.connected) {
+        alert('Không thể kết nối đến server');
+        return;
+    }
+    
+    currentUser = {
+        name: username,
+        id: socket.id
+    };
+    
+    socket.emit('user-join', currentUser);
+    isInChat = true;
+    updateChatUI();
+    
+    console.log('👤 Joined chat as:', username);
+}
+
+// Leave chat functionality
+function leaveChat() {
+    if (socket && socket.connected) {
+        socket.disconnect();
+    }
+    
+    isInChat = false;
+    currentUser = null;
+    connectedUsers = [];
+    messageHistory = [];
+    
+    updateChatUI();
+    updateConnectionStatus(false);
+    
+    console.log('👋 Left chat');
+}
+
+// Send message functionality
+function sendMessage() {
+    const messageInput = document.getElementById('message-input');
+    const messageText = messageInput.value.trim();
+    
+    if (!messageText || !isInChat || !socket) {
+        return;
+    }
+    
+    socket.emit('chat-message', {
+        text: messageText,
+        type: 'text'
+    });
+    
+    messageInput.value = '';
+    stopTyping();
+}
+
+// Handle typing indicators
+function handleTyping() {
+    if (!isInChat || !socket) return;
+    
+    socket.emit('typing-start');
+    
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(() => {
+        stopTyping();
+    }, 1000);
+}
+
+function stopTyping() {
+    if (socket && isInChat) {
+        socket.emit('typing-stop');
+    }
+    clearTimeout(typingTimer);
+}
+
+// Update connection status
+function updateConnectionStatus(connected) {
+    const statusElement = document.getElementById('connection-status');
+    if (statusElement) {
+        if (connected) {
+            statusElement.textContent = '🟢 Connected';
+            statusElement.className = 'status-connected';
+        } else {
+            statusElement.textContent = '🔴 Disconnected';
+            statusElement.className = 'status-disconnected';
+        }
+    }
+}
+
+// Update user count
+function updateUserCount(count) {
+    const userCountElement = document.getElementById('user-count');
+    const socketUsersElement = document.getElementById('socket-users');
+    
+    if (userCountElement) {
+        userCountElement.textContent = `${count} users online`;
+    }
+    
+    if (socketUsersElement) {
+        socketUsersElement.textContent = count;
+    }
+}
+
+// Update users list
+function updateUsersList() {
+    const usersListElement = document.getElementById('users-list');
+    if (!usersListElement) return;
+    
+    usersListElement.innerHTML = '';
+    
+    connectedUsers.forEach(user => {
+        const userElement = document.createElement('div');
+        userElement.className = 'user-item';
+        
+        if (currentUser && user.id === currentUser.id) {
+            userElement.classList.add('current-user');
+        }
+        
+        userElement.textContent = user.name;
+        usersListElement.appendChild(userElement);
+    });
+}
+
+// Update chat UI based on connection status
+function updateChatUI() {
+    const chatMain = document.querySelector('.chat-main');
+    const joinBtn = document.getElementById('join-chat');
+    const leaveBtn = document.getElementById('leave-chat');
+    const usernameInput = document.getElementById('username-input');
+    
+    if (isInChat) {
+        if (chatMain) chatMain.style.display = 'flex';
+        if (joinBtn) joinBtn.style.display = 'none';
+        if (leaveBtn) leaveBtn.style.display = 'inline-block';
+        if (usernameInput) usernameInput.disabled = true;
+    } else {
+        if (chatMain) chatMain.style.display = 'none';
+        if (joinBtn) joinBtn.style.display = 'inline-block';
+        if (leaveBtn) leaveBtn.style.display = 'none';
+        if (usernameInput) {
+            usernameInput.disabled = false;
+            usernameInput.value = '';
+        }
+        
+        // Clear messages and users
+        const messagesContainer = document.getElementById('messages-container');
+        const usersListElement = document.getElementById('users-list');
+        if (messagesContainer) messagesContainer.innerHTML = '';
+        if (usersListElement) usersListElement.innerHTML = '';
+    }
+}
+
+// Display all messages
+function displayMessages() {
+    const messagesContainer = document.getElementById('messages-container');
+    if (!messagesContainer) return;
+    
+    messagesContainer.innerHTML = '';
+    
+    messageHistory.forEach(message => {
+        addMessage(message, false);
+    });
+    
+    scrollToBottom();
+}
+
+// Add a single message
+function addMessage(message, shouldScroll = true) {
+    const messagesContainer = document.getElementById('messages-container');
+    if (!messagesContainer) return;
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message';
+    
+    const isOwnMessage = currentUser && message.userId === currentUser.id;
+    
+    if (isOwnMessage) {
+        messageElement.classList.add('own');
+    } else {
+        messageElement.classList.add('other');
+    }
+    
+    const timestamp = new Date(message.timestamp).toLocaleTimeString('vi-VN');
+    
+    messageElement.innerHTML = `
+        <div class="message-header">${message.user}</div>
+        <div class="message-text">${escapeHtml(message.text)}</div>
+        <div class="message-time">${timestamp}</div>
+    `;
+    
+    messagesContainer.appendChild(messageElement);
+    
+    if (shouldScroll) {
+        scrollToBottom();
+    }
+}
+
+// Add system message
+function addSystemMessage(text) {
+    const messagesContainer = document.getElementById('messages-container');
+    if (!messagesContainer) return;
+    
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message system';
+    messageElement.innerHTML = `<div class="message-text">${escapeHtml(text)}</div>`;
+    
+    messagesContainer.appendChild(messageElement);
+    scrollToBottom();
+}
+
+// Update typing indicator
+function updateTypingIndicator(data) {
+    const typingElement = document.getElementById('typing-indicator');
+    if (!typingElement) return;
+    
+    if (data.typing && data.userName) {
+        typingElement.textContent = `${data.userName} đang gõ...`;
+    } else {
+        typingElement.textContent = '';
+    }
+}
+
+// Update socket statistics
+function updateSocketStats(status) {
+    updateUserCount(status.connectedUsers);
+}
+
+// Scroll to bottom of messages
+function scrollToBottom() {
+    const messagesContainer = document.getElementById('messages-container');
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Export socket functions for debugging
+window.debugSocket = {
+    joinChat,
+    leaveChat,
+    sendMessage,
+    socket: () => socket,
+    currentUser: () => currentUser,
+    connectedUsers: () => connectedUsers,
+    messageHistory: () => messageHistory
+};
+
+console.log('🔌 Socket.IO functions available at window.debugSocket');

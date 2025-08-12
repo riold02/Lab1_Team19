@@ -1,8 +1,8 @@
-# Lab01 - Client-Server Application
+# Lab01 - Full-Stack Client-Server Application with Real-time Chat
 
-## 📋 Tổng quan dự án
+## 🚀 Tổng quan dự án
 
-Dự án Lab01 xây dựng một ứng dụng Client-Server hoàn chỉnh bao gồm:
+Dự án Lab01 xây dựng một ứng dụng Client-Server hoàn chỉnh với **real-time communication** bao gồm:
 
 ### **Phần A: Static Web Server (35 điểm)** ✅
 - HTTP server sử dụng Express.js
@@ -13,27 +13,40 @@ Dự án Lab01 xây dựng một ứng dụng Client-Server hoàn chỉnh bao g�
 
 ### **Phần B: HTTP Client (35 điểm)** ✅
 - HTTP Client tự xây dựng từ đầu (không dùng axios/fetch)
-- Hỗ trợ GET và POST methods
+- Hỗ trợ GET, POST, PUT, DELETE methods
 - Xử lý HTTP và HTTPS requests
 - Error handling toàn diện
+- Request logging và statistics
+
+### **Phần C: Socket.IO Real-time Chat (Bonus)** ✅ 
+- **Real-time chat application** với Socket.IO
+- **Multi-user support** với user management
+- **Typing indicators** và presence status
+- **Message history** và persistent chat
+- **Real-time notifications** khi user join/leave
+- **Responsive chat UI** với modern design
+
+### **Phần D: Monitoring Tool (Bonus)** ✅
+- Application monitoring với health checks
+- Performance tracking
+- System information reporting
 
 ## 🗂️ Cấu trúc dự án
 
 ```
-lab01-[ten-nhom]/
-├── README.md                 # Hướng dẫn sử dụng
-├── package.json             # Dependencies và scripts
-├── server.js                # Express server chính
+Lab1_Team9/
+├── README.md                 # Hướng dẫn sử dụng (updated)
+├── package.json             # Dependencies (+ Socket.IO)
+├── server.js                # Express + Socket.IO server
 ├── client.js                # HTTP Client class
-├── monitor.js               # Application monitoring (tùy chọn)
+├── monitor.js               # Application monitoring tool
 ├── public/                  # Static files
-│   ├── index.html          # Giao diện web tương tác
-│   ├── style.css           # CSS responsive design
-│   └── script.js           # JavaScript với AJAX calls
+│   ├── index.html          # Web UI + Chat Interface
+│   ├── style.css           # CSS + Chat Styling
+│   └── script.js           # JavaScript + Socket.IO Client
 ├── screenshots/            # Screenshots demo
-├── docs/                   # Documentation
-│   └── technical-report.md # Báo cáo kỹ thuật chi tiết
-└── presentation/           # Presentation materials
+└── docs/                   # Documentation
+    └── technical-report.md # Báo cáo kỹ thuật
 ```
 
 ## 🚀 Cài đặt và Chạy
@@ -51,281 +64,142 @@ npm run dev
 ```
 
 ### 3. **Truy cập ứng dụng**
-- **Web Interface**: http://localhost:3000
+- **Web Interface + Chat**: http://localhost:3000
 - **API Endpoints**: http://localhost:3000/api/*
+- **Socket.IO**: ws://localhost:3000 (auto-connect)
 
-### **POST Test Endpoint**
+## 🔌 Socket.IO Real-time Features
+
+### **Chat Interface**
+- **Multi-user real-time chat** với instant messaging
+- **User presence** - xem ai đang online
+- **Typing indicators** - thấy khi người khác đang gõ
+- **Message history** - lưu 100 tin nhắn gần nhất
+- **Join/Leave notifications** - thông báo khi có người vào/ra
+- **Responsive design** - hoạt động tốt trên mobile và desktop
+
+### **Socket.IO Events**
+
+#### **Client Events (gửi từ client):**
+```javascript
+socket.emit('user-join', { name: 'Username' });     // Tham gia chat
+socket.emit('chat-message', { text: 'Hello!' });   // Gửi tin nhắn
+socket.emit('typing-start');                        // Bắt đầu gõ
+socket.emit('typing-stop');                         // Dừng gõ
+socket.emit('get-server-status');                   // Lấy status server
+socket.emit('ping', { clientTime: Date.now() });   // Ping server
+```
+
+#### **Server Events (phản hồi từ server):**
+```javascript
+socket.on('user-count', count => {});               // Số user online
+socket.on('user-list', users => {});               // Danh sách users
+socket.on('message-history', messages => {});      // Lịch sử chat
+socket.on('new-message', message => {});           // Tin nhắn mới
+socket.on('user-joined', data => {});              // User vào chat
+socket.on('user-left', data => {});                // User rời chat
+socket.on('user-typing', data => {});              // Typing indicator
+socket.on('server-status', status => {});          // Thông tin server
+socket.on('pong', data => {});                     // Pong response
+```
+
+## 📡 API Endpoints
+
+### **1. Server Information**
 ```http
-POST /api/test-post
-Content-Type: application/json
+GET /api/server-info
+```
 
+### **2. Socket Information** ✨ **NEW!**
+```http
+GET /api/socket-info
+```
+Trả về thông tin real-time:
+```json
 {
-  "name": "Test User",
-  "message": "Hello World",
-  "data": {"key": "value"}
+  "success": true,
+  "message": "Socket.IO information",
+  "data": {
+    "connectedUsers": 3,
+    "totalMessages": 25,
+    "users": [
+      {"id": "socket_123", "name": "User1", "joinTime": "2025-01-15T10:30:00Z"},
+      {"id": "socket_456", "name": "User2", "joinTime": "2025-01-15T10:31:00Z"}
+    ],
+    "recentMessages": [...]
+  }
 }
 ```
 
-### **Status Code Testing**
+### **3. Timestamp**
+```http
+GET /api/timestamp
+```
+
+### **4. POST Test Endpoint**
+```http
+POST /api/test-post
+```
+
+### **5. Status Code Testing**
 ```http
 GET /api/status/200
 GET /api/status/404
 GET /api/status/500
 ```
 
-### **Headers Echo**
+### **6. Headers Echo**
 ```http
 GET /api/headers
 ```
 
-### **Response Delay Simulation**
+### **7. Response Delay Simulation**
 ```http
 GET /api/delay/3
 ```
 
-## 🧪 Testing và Demo
+## ⚡ Tính năng đã implement
 
-### **Web Interface Testing:**
-1. Truy cập `http://localhost:3000`
-2. Click các nút test API:
-   - **Test Server Info API** - Lấy thông tin server
-   - **Test POST API** - Thử POST request
-   - **Test Status Codes** - Test các HTTP status codes
-   - **Test Headers** - Test custom headers
-   - **Test 404 Error** - Test error handling
-
-### **HTTP Client Testing:**
-```javascript
-const HTTPClient = require('./client');
-const client = new HTTPClient();
-
-// Test local server
-const response = await client.get('http://localhost:3000/api/server-info');
-console.log(response.data);
-
-// Test external API
-const github = await client.get('https://api.github.com/users/octocat');
-console.log(github.data.login);
-
-// Test POST request
-const post = await client.post('https://httpbin.org/post', {
-  message: 'Hello from custom client!'
-});
-```
-
-### **Monitoring:**
-```bash
-node monitor.js  # Chạy monitoring tool
-```
-
-## 🔧 Custom HTTP Headers
-
-Server tự động thêm các headers sau vào mọi response:
-- `X-Server-Name: Static Web Server`
-- `X-Powered-By: Express.js`  
-- `X-Response-Time: [timestamp]`
-- `X-API-Version: 1.0.0`
-
-## ⚡ Tính năng chính
-
-### **Server Features:**
+### **Server Features (server.js):**
 - ✅ Express.js HTTP server trên port 3000
+- ✅ **Socket.IO server** với real-time communication
+- ✅ **User management** với connected users tracking
+- ✅ **Message history** storage (100 messages)
+- ✅ **Chat room functionality** với broadcast messaging
+- ✅ **Typing indicators** và presence notifications
 - ✅ Static file serving từ thư mục `public/`
-- ✅ RESTful API endpoints với JSON responses
+- ✅ 7 RESTful API endpoints (+ socket-info endpoint)
 - ✅ Comprehensive error handling (404, 500)
 - ✅ Custom HTTP headers cho mọi response
-- ✅ Request logging và monitoring
 
-### **Client Features:**
+### **Socket.IO Client Features (public/script.js):**
+- ✅ **Real-time chat interface** với Socket.IO client
+- ✅ **User authentication** và join/leave functionality
+- ✅ **Message sending/receiving** với real-time updates
+- ✅ **Typing indicators** với auto-stop timeout
+- ✅ **User list management** với online status
+- ✅ **Connection status** monitoring
+- ✅ **Message history** display khi join
+- ✅ **XSS protection** với HTML escaping
+- ✅ **Responsive chat UI** cho mobile/desktop
+
+### **HTTP Client Features (client.js):**
 - ✅ HTTP Client xây dựng từ đầu bằng Node.js native modules
 - ✅ Support HTTP/HTTPS protocols
 - ✅ GET, POST, PUT, DELETE methods
 - ✅ Automatic JSON parsing
-- ✅ Timeout handling
+- ✅ Timeout handling (configurable)
 - ✅ Detailed error handling và logging
-- ✅ Request/response statistics
+- ✅ Request/response statistics và timing
+- ✅ Built-in demo và test functions
+- ✅ Ping utility cho server connectivity
 
-### **Web Interface Features:**
-- ✅ Responsive design cho mọi thiết bị
+### **Web Interface Features (public/):**
+- ✅ **Real-time Chat Interface** với Socket.IO integration
+- ✅ **Multi-user chat** với user list và typing indicators
+- ✅ **Connection status** indicators (Connected/Disconnected)
+- ✅ **Message history** và real-time message updates
+- ✅ **Responsive chat design** cho tất cả devices
+- ✅ Interactive API testing buttons (6 test functions)
 - ✅ Real-time server information display
-- ✅ Interactive API testing buttons
-- ✅ AJAX calls với error handling
-- ✅ Loading indicators và user feedback
-- ✅ Auto-refresh functionality
-
-## 🎯 Kiểm thử với Postman
-
-### **Import Collection:**
-Tạo Postman collection với các endpoints:
-
-1. **Server Info** - `GET http://localhost:3000/api/server-info`
-2. **Timestamp** - `GET http://localhost:3000/api/timestamp`
-3. **POST Test** - `POST http://localhost:3000/api/test-post`
-4. **Status Codes** - `GET http://localhost:3000/api/status/404`
-5. **Headers Test** - `GET http://localhost:3000/api/headers`
-
-### **Environment Variables:**
-```
-base_url: http://localhost:3000
-api_prefix: /api
-```
-
-## 📊 Performance
-
-- **Static files**: < 100ms response time
-- **API endpoints**: < 200ms average response time  
-- **Memory usage**: Stable under load
-- **Error rate**: < 1% under normal conditions
-
-## 🛠️ Technology Stack
-
-### **Backend:**
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **Native HTTP/HTTPS modules** - For custom client
-
-### **Frontend:**
-- **HTML5** - Semantic markup
-- **CSS3** - Modern styling với Grid/Flexbox
-- **Vanilla JavaScript** - ES6+ features, Fetch API
-
-### **Tools:**
-- **npm** - Package management
-- **nodemon** - Development auto-restart
-
-## 📋 Requirements
-
-- **Node.js**: >= 14.0.0
-- **npm**: >= 6.0.0
-- **OS**: Windows/macOS/Linux
-- **Port**: 3000 (configurable)
-
-## 🔍 Error Handling
-
-### **404 Errors:**
-- **API 404**: JSON response với error details
-- **Static File 404**: Custom HTML error page
-
-### **500 Errors:**
-- Global error handler với stack trace (development mode)
-- Graceful error messages (production mode)
-
-### **Client Errors:**
-- Network errors (ECONNREFUSED, ENOTFOUND)
-- Timeout errors với configurable timeouts
-- HTTP status code errors (4xx, 5xx)
-- JSON parsing errors
-
-## 📚 Documentation
-
-- **Technical Report**: `docs/technical-report.md`
-- **Code Comments**: Inline documentation
-- **API Documentation**: This README
-- **Examples**: Usage examples trong code
-
-
-
-**Developed by**:Nhóm 9 
-**Date**: August 12, 2025  
-**Course**: Client-Server Programming Lab
-{
-  "success": true,
-  "message": "Server information retrieved successfully",
-  "data": {
-    "timestamp": "2025-08-12T10:30:00.000Z",
-    "uptime": 3600,
-    "platform": "win32",
-    "arch": "x64",
-    "hostname": "DESKTOP-ABC123",
-    "totalMemory": 17179869184,
-    "freeMemory": 8589934592,
-    "cpus": 8,
-    "nodeVersion": "v18.17.0",
-    "port": 3000,
-    "environment": "development"
-  }
-}
-```
-
-### 2. `/api/timestamp` (GET)
-Trả về timestamp hiện tại của server:
-```json
-{
-  "timestamp": "2025-08-12T10:30:00.000Z",
-  "timezone": "Asia/Ho_Chi_Minh",
-  "unixTimestamp": 1723461000
-}
-```
-
-## Custom HTTP Headers
-
-Server tự động thêm các custom headers vào mỗi response:
-- `X-Server-Name`: Static Web Server
-- `X-Powered-By`: Express.js
-- `X-Response-Time`: [Timestamp của response]
-
-## Tính năng chính
-
-### 1. Giao diện Web
-- **Trang chủ responsive** với design hiện đại
-- **Thống kê realtime**: Page views, API requests, server uptime
-- **Thông tin server**: Platform, memory, CPU, Node.js version
-- **Timestamp server**: Hiển thị thời gian server realtime
-
-### 2. AJAX Functionality
-- **Auto-refresh**: Timestamp tự động cập nhật mỗi 30 giây
-- **Manual refresh**: Nút bấm để cập nhật thông tin server
-- **API testing**: Test các endpoints và xem response
-- **Error testing**: Test lỗi 404 và xử lý errors
-
-### 3. Error Handling
-- **404 Page**: Trang lỗi 404 tùy chỉnh cho static files
-- **API 404**: JSON response cho API endpoints không tồn tại
-- **500 Errors**: Xử lý lỗi server và trả về JSON response
-- **Client-side errors**: JavaScript error handling
-
-### 4. Features khác
-- **Loading indicators**: Hiển thị loading khi gọi API
-- **Local storage**: Lưu page views và preferences
-- **Server status**: Kiểm tra trạng thái server
-- **Debug tools**: Console logging và debug functions
-
-## Công nghệ sử dụng
-
-### Backend
-- **Express.js**: Web framework cho Node.js
-- **Node.js**: Runtime environment
-
-### Frontend
-- **HTML5**: Semantic markup
-- **CSS3**: Modern styling với Grid, Flexbox, Gradients
-- **Vanilla JavaScript**: ES6+ features, Fetch API, Async/Await
-
-### Features
-- **Responsive Design**: Mobile-first approach
-- **Progressive Enhancement**: Works without JavaScript
-- **Modern CSS**: CSS Grid, Flexbox, Custom Properties
-- **Error Boundaries**: Graceful error handling
-
-## Port và Configuration
-
-- **Default Port**: 3000
-- **Static Files**: Served from `/public` directory
-- **API Base**: `/api/*`
-- **Error Pages**: Custom 404 page
-
-## Testing
-
-### Manual Testing
-1. Truy cập `http://localhost:3000`
-2. Click "Làm mới thời gian" để test AJAX
-3. Click "Lấy thông tin server" để test API
-4. Click "Test API Endpoint" để test API response
-5. Click "Test 404 Error" để test error handling
-6. Truy cập URL không tồn tại để test 404 page
-
-### Browser Console
-Mở Developer Tools để xem:
-- Console logs với custom headers
-- Network requests với custom headers
-- Debug functions tại `window.debugAPI`
+- ✅ AJAX

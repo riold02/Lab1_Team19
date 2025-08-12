@@ -50,6 +50,39 @@
             <div id="api-response" class="response-container"></div>
         </section>
 
+        <section class="realtime-section">
+            <h3>🔌 Real-time Chat với Socket.IO</h3>
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="connection-status">
+                        <span id="connection-status" class="status-disconnected">🔴 Disconnected</span>
+                        <span id="user-count" class="user-count">0 users online</span>
+                    </div>
+                    <div class="user-controls">
+                        <input type="text" id="username-input" placeholder="Nhập tên của bạn..." maxlength="20">
+                        <button id="join-chat" class="btn btn-success">Tham gia Chat</button>
+                        <button id="leave-chat" class="btn btn-danger" style="display: none;">Rời khỏi</button>
+                    </div>
+                </div>
+                
+                <div class="chat-main" style="display: none;">
+                    <div class="users-panel">
+                        <h4>👥 Users Online</h4>
+                        <div id="users-list"></div>
+                    </div>
+                    
+                    <div class="chat-panel">
+                        <div id="messages-container" class="messages-container"></div>
+                        <div id="typing-indicator" class="typing-indicator"></div>
+                        <div class="message-input-container">
+                            <input type="text" id="message-input" placeholder="Nhập tin nhắn..." maxlength="500">
+                            <button id="send-message" class="btn btn-primary">Gửi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="stats">
             <h3>📊 Thống Kê</h3>
             <div class="stats-grid">
@@ -64,6 +97,10 @@
                 <div class="stat-item">
                     <span class="stat-value" id="uptime">-</span>
                     <span class="stat-label">Server Uptime</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="socket-users">0</span>
+                    <span class="stat-label">Socket Users</span>
                 </div>
             </div>
         </section>
@@ -81,6 +118,7 @@
         <p>Đang tải...</p>
     </div>
 
+    <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
