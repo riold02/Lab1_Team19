@@ -58,6 +58,7 @@ npm install
 
 ### 2. **Khởi động Server**
 ```bash
+npm i websocket
 npm start
 # hoặc development mode với auto-restart:
 npm run dev
