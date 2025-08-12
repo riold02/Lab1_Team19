@@ -34,7 +34,7 @@ Dự án Lab01 xây dựng một ứng dụng Client-Server hoàn chỉnh với 
 ## 🗂️ Cấu trúc dự án
 
 ```
-Lab1_Team9/
+Lab1_Team19/
 ├── README.md                 # Hướng dẫn sử dụng (updated)
 ├── package.json             # Dependencies (+ Socket.IO)
 ├── server.js                # Express + Socket.IO server
