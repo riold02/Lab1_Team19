@@ -1,8 +1,8 @@
-# Báo Cáo Kỹ Thuật - Hệ Thống Client-Server Full-Stack
+# Báo Cáo Kỹ Thuật - Client-Server Fundamentals 
 
 ## 📋 Tổng Quan Dự Án
 
-**Tên dự án:** Lab01 - Client-Server Fundamentals 
+**Tên dự án:** Lab01 - 
 **Nhóm thực hiện:** Team 19  
 **Ngày tạo báo cáo:** 2025  
 
